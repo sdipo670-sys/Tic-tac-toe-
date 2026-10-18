@@ -1,0 +1,160 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tic Tac Toe Ultra</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;min-height:100dvh;display:flex;justify-content:center;
+ align-items:center;font-family:Arial;color:white;
+ background:radial-gradient(circle at top,#25246b,#0a0b19 65%);
+}
+.game{width:min(92vw,410px);text-align:center;padding:22px 15px}
+h1{font-size:35px;margin:0 0 8px;letter-spacing:2px}
+h1 span{color:#43edff;text-shadow:0 0 18px #43edff}
+.sub{color:#b7b8dc;margin-bottom:25px}
+.score{display:flex;gap:12px;margin-bottom:22px}
+.score div{flex:1;padding:14px 5px;border:1px solid #ffffff22;
+ border-radius:16px;background:#ffffff0a}
+.score b{display:block;font-size:25px;margin-bottom:5px}
+.x{color:#43edff}.o{color:#ff65c7}
+#status{font-size:18px;font-weight:bold;min-height:28px;margin:18px 0}
+.board{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.cell{
+ aspect-ratio:1;border:1px solid #ffffff20;border-radius:17px;
+ background:linear-gradient(145deg,#ffffff13,#ffffff05);
+ color:white;font-size:clamp(38px,13vw,58px);font-weight:bold;
+ cursor:pointer;transition:transform .2s,background .2s;
+ box-shadow:inset 0 0 18px #ffffff04;
+}
+.cell:active{transform:scale(.91)}
+.cell.x{color:#43edff;text-shadow:0 0 20px #43edff;
+ animation:pop .3s}
+.cell.o{color:#ff65c7;text-shadow:0 0 20px #ff65c7;
+ animation:pop .3s}
+.cell.win{background:#31f6a522;border-color:#31f6a5;
+ box-shadow:0 0 20px #31f6a544}
+@keyframes pop{50%{transform:scale(1.15)}}
+.controls{display:flex;gap:10px;margin-top:22px}
+button.control{flex:1;padding:14px 7px;border:0;border-radius:13px;
+ color:white;font-size:14px;font-weight:bold;cursor:pointer;
+ background:linear-gradient(100deg,#6547ff,#bb43ff)}
+button.secondary{background:#ffffff13;border:1px solid #ffffff20}
+.note{font-size:12px;color:#999fca;margin-top:22px}
+</style>
+</head>
+<body>
+<div class="game">
+<h1>TIC <span>TAC</span> TOE</h1>
+<div class="sub">✦ ULTRA NEON EDITION ✦</div>
+
+<div class="score">
+ <div><b class="x">X</b><span>Player X</span><br><strong id="sx">0</strong></div>
+ <div><b>DRAW</b><span>Matches</span><br><strong id="sd">0</strong></div>
+ <div><b class="o">O</b><span>Player O</span><br><strong id="so">0</strong></div>
+</div>
+
+<div id="status">Player X's turn</div>
+<div class="board" id="board"></div>
+
+<div class="controls">
+<button class="control" onclick="reset()">↻ New Game</button>
+<button class="control secondary" onclick="toggleMode()" id="mode">👥 2 Players</button>
+</div>
+<div class="note">MADE FOR FUN · THINK FAST · WIN BIG ✨</div>
+</div>
+
+<script>
+let cells=Array(9).fill("");
+let player="X", over=false, cpu=false;
+let scores={X:0,O:0,D:0};
+const wins=[
+[0,1,2],[3,4,5],[6,7,8],
+[0,3,6],[1,4,7],[2,5,8],
+[0,4,8],[2,4,6]
+];
+const board=document.getElementById("board");
+function draw(){
+ board.innerHTML="";
+ cells.forEach((v,i)=>{
+  const b=document.createElement("button");
+  b.className="cell"+(v?" "+v.toLowerCase():"");
+  b.textContent=v;
+  b.setAttribute("aria-label","Cell "+(i+1)+(v?", "+v:""));
+  b.onclick=()=>move(i);
+  board.appendChild(b);
+ });
+}
+function winner(){
+ for(const line of wins)
+  if(cells[line[0]]&&cells[line[0]]===cells[line[1]]&&
+     cells[line[1]]===cells[line[2]]) return line;
+ return null;
+}
+function move(i){
+ if(over||cells[i])return;
+ cells[i]=player;
+ finish();
+ if(!over){
+  player=player==="X"?"O":"X";
+  draw();
+  if(cpu&&player==="O"){
+   document.getElementById("status").textContent="🤖 AI is thinking...";
+   setTimeout(aiMove,350);
+  }else updateStatus();
+ }
+}
+function finish(){
+ const line=winner();
+ if(line){
+  over=true;scores[player]++;
+  document.getElementById("status").textContent="🎉 Player "+player+" Wins!";
+  line.forEach(i=>board.children[i]?.classList.add("win"));
+  updateScores();draw();line.forEach(i=>board.children[i].classList.add("win"));
+ }else if(cells.every(Boolean)){
+  over=true;scores.D++;
+  document.getElementById("status").textContent="🤝 It's a Draw!";
+  updateScores();draw();
+ }else draw();
+}
+function aiMove(){
+ if(over)return;
+ let choices=cells.map((v,i)=>v?null:i).filter(v=>v!==null);
+ function findMove(mark){
+  for(const i of choices){
+   cells[i]=mark;let ok=!!winner();cells[i]="";
+   if(ok)return i;
+  }
+  return null;
+ }
+ let i=findMove("O");
+ if(i===null)i=findMove("X");
+ if(i===null&&choices.includes(4))i=4;
+ if(i===null)i=choices[Math.floor(Math.random()*choices.length)];
+ if(i!==undefined)move(i);
+}
+function updateStatus(){
+ document.getElementById("status").textContent=
+ "Player "+player+"'s turn"+(cpu&&player==="O"?" 🤖":"");
+}
+function updateScores(){
+ document.getElementById("sx").textContent=scores.X;
+ document.getElementById("so").textContent=scores.O;
+ document.getElementById("sd").textContent=scores.D;
+}
+function reset(){
+ cells=Array(9).fill("");player="X";over=false;
+ draw();updateStatus();
+}
+function toggleMode(){
+ cpu=!cpu;
+ document.getElementById("mode").textContent=cpu?"🤖 Vs Computer":"👥 2 Players";
+ reset();
+}
+draw();updateStatus();
+</script>
+</body>
+</html>
